@@ -11,9 +11,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/booking-service")
+
 public class BookingController {
     @Autowired
     private BookingService bookingService;
+
     @GetMapping("/bookings")
     public List<Booking> bookings() {
         return bookingService.getAllBookings();

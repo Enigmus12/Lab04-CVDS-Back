@@ -8,7 +8,6 @@ import java.time.LocalDate;
 //@Setter
 public class BookingDTO {
     private String bookingId;
-    private String userId;
     private LocalDate bookingDate;
 
     public String getBookingId() {
@@ -17,14 +16,6 @@ public class BookingDTO {
 
     public void setBookingId(String bookingId) {
         this.bookingId = bookingId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
     }
 
     public LocalDate getBookingDate() {
