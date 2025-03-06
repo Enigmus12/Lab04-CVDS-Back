@@ -12,28 +12,24 @@ public class Booking {
     @MongoId
     private String id;
     private String bookingId;
-    private String userId;
     private LocalDate bookingDate;
 
     @PersistenceCreator
-    public Booking(String id, String bookingId, String userId, LocalDate bookingDate) {
+    public Booking(String id, String bookingId, LocalDate bookingDate) {
         this.id = id;
         this.bookingId = bookingId;
-        this.userId = userId;
         this.bookingDate = bookingDate;
 
     }
 
     public Booking(BookingDTO bookingDTO) {
         this.bookingDate = bookingDTO.getBookingDate();
-        this.userId = bookingDTO.getUserId();
         this.bookingId = bookingDTO.getBookingId();
     }
 
     public String getId() {
         return id;
     }
-
     public void setId(String id) {
         this.id = id;
     }
@@ -41,23 +37,13 @@ public class Booking {
     public String getBookingId() {
         return bookingId;
     }
-
     public void setBookingId(String bookingId) {
         this.bookingId = bookingId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
     }
 
     public LocalDate getBookingDate() {
         return bookingDate;
     }
-
     public void setBookingDate(LocalDate bookingDate) {
         this.bookingDate = bookingDate;
     }

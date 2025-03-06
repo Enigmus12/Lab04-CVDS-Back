@@ -14,6 +14,7 @@ import java.util.Optional;
 public class BookingRepositoryImpl implements BookingRepository {
     @Autowired
     private BookingMongoRepository bookingMongoRepository;
+
     @Override
     public void save(Booking booking) {
         bookingMongoRepository.save(booking);
