@@ -8,6 +8,9 @@ import java.util.List;
 public interface BookingRepository {
     void save(Booking booking);
     List<Booking> findAll();
-    Booking findById(String id) throws BookingServiceException;
-    void deleteById(String id) throws BookingServiceException;
+    Booking findById(String bookingId) throws BookingServiceException;
+    void deleteById(String bookingId) throws BookingServiceException;
+    void update(Booking booking) throws BookingServiceException;
+    boolean existsById(String bookingId);
 }
+

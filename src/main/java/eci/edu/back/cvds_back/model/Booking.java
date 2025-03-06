@@ -1,37 +1,38 @@
 package eci.edu.back.cvds_back.model;
 
 import eci.edu.back.cvds_back.dto.BookingDTO;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Document(collection = "bookings")
 public class Booking {
-    @MongoId
-    private String id;
+    @Id
     private String bookingId;
     private LocalDate bookingDate;
+    private LocalTime bookingTime;
+    private boolean disable;
+    private String bookingClassRoom;
 
     @PersistenceCreator
-    public Booking(String id, String bookingId, LocalDate bookingDate) {
-        this.id = id;
+    public Booking(String bookingId, LocalDate bookingDate,LocalTime bookingTime ,boolean disable, String bookingClassRoom) {
         this.bookingId = bookingId;
         this.bookingDate = bookingDate;
-
+        this.bookingTime = bookingTime;
+        this.disable = disable;
+        this.bookingClassRoom = bookingClassRoom;
     }
 
     public Booking(BookingDTO bookingDTO) {
+        this.bookingTime = bookingDTO.getBookingTime();
         this.bookingDate = bookingDTO.getBookingDate();
         this.bookingId = bookingDTO.getBookingId();
-    }
-
-    public String getId() {
-        return id;
-    }
-    public void setId(String id) {
-        this.id = id;
+        this.disable = true;
+        this.bookingClassRoom = bookingDTO.getBookingClassRoom();
     }
 
     public String getBookingId() {
@@ -47,4 +48,13 @@ public class Booking {
     public void setBookingDate(LocalDate bookingDate) {
         this.bookingDate = bookingDate;
     }
+
+    public LocalTime getBookingTime() { return bookingTime; }
+    public void setBookingTime(LocalTime bookingTime) { this.bookingTime = bookingTime; }
+
+    public boolean isDisable() { return disable; }
+    public void setDisable(boolean disable) { this.disable = disable; }
+
+    public String getBookingClassRoom() { return bookingClassRoom; }
+    public void setBookingClassRoom(String bookingClassRoom) {this.bookingClassRoom = bookingClassRoom; }
 }
