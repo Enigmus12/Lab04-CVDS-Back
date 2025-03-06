@@ -26,14 +26,28 @@ public class BookingRepositoryImpl implements BookingRepository {
     }
 
     @Override
-    public Booking findById(String id) throws BookingServiceException{
-        Optional<Booking> booking = bookingMongoRepository.findById(id);
+    public Booking findById(String bookingId) throws BookingServiceException{
+        Optional<Booking> booking = bookingMongoRepository.findById(bookingId);
         if(booking.isEmpty()) throw new BookingServiceException("Booking Not found");
         return booking.get();
     }
 
     @Override
-    public void deleteById(String id) throws BookingServiceException {
-        bookingMongoRepository.deleteById(id);
+    public void deleteById(String bookingId) throws BookingServiceException {
+        bookingMongoRepository.deleteById(bookingId);
     }
+
+    @Override
+    public void update(Booking booking) throws BookingServiceException {
+        if (!bookingMongoRepository.existsById(booking.getBookingId())) {
+            throw new BookingServiceException("Booking Not Found");
+        }
+        bookingMongoRepository.save(booking);
+    }
+
+    @Override
+    public boolean existsById(String bookingId) {
+        return bookingMongoRepository.existsById(bookingId);
+    }
+
 }

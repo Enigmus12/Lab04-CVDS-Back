@@ -21,19 +21,30 @@ public class BookingController {
         return bookingService.getAllBookings();
     }
 
-    @GetMapping("/bookings/{id}")
-    public Booking booking(@PathVariable String id) throws BookingServiceException {
-        return bookingService.getBooking(id);
+    @GetMapping("/bookings/{bookingId}")
+    public Booking booking(@PathVariable String bookingId) throws BookingServiceException {
+        return bookingService.getBooking(bookingId);
     }
 
     @PostMapping("/bookings")
-    public Booking booking(@RequestBody BookingDTO booking) {
+    public Booking booking(@RequestBody BookingDTO booking) throws BookingServiceException {
         return bookingService.saveBooking(booking);
     }
 
-    @DeleteMapping("/bookings/{id}")
-    public List<Booking> deleteBooking(@PathVariable String id) throws BookingServiceException {
-        bookingService.deleteBooking(id);
+    @DeleteMapping("/bookings/{bookingId}")
+    public List<Booking> deleteBooking(@PathVariable String bookingId) throws BookingServiceException {
+        bookingService.deleteBooking(bookingId);
         return  bookingService.getAllBookings();
     }
+
+    @PutMapping("/bookings/make/{bookingId}")
+    public Booking makeBookingReservation(@PathVariable String bookingId) throws BookingServiceException {
+        return bookingService.updateBooking(bookingId, false);
+    }
+
+    @PutMapping("/bookings/cancel/{bookingId}")
+    public Booking cancelBookingReservation(@PathVariable String bookingId) throws BookingServiceException {
+        return bookingService.updateBooking(bookingId, true);
+    }
+
 }

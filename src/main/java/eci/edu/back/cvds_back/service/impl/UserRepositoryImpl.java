@@ -1,8 +1,6 @@
 package eci.edu.back.cvds_back.service.impl;
 
-import eci.edu.back.cvds_back.config.BookingServiceException;
 import eci.edu.back.cvds_back.config.UserServiceException;
-import eci.edu.back.cvds_back.model.Booking;
 import eci.edu.back.cvds_back.model.User;
 import eci.edu.back.cvds_back.service.interfaces.UserMongoRepository;
 import eci.edu.back.cvds_back.service.interfaces.UserRepository;
