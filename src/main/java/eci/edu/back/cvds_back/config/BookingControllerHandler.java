@@ -9,11 +9,5 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class BookingControllerHandler {
-    private Logger logger = LoggerFactory.getLogger(BookingControllerHandler.class);
-    @ExceptionHandler(BookingServiceException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleBookingServiceException(BookingServiceException ex) {
-        logger.error("Error handled:" + ex.getMessage());
-        return "Implementation failed";
-    }
+
 }
