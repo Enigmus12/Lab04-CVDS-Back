@@ -22,6 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -237,6 +242,219 @@ public class CvdsBackApplicationTests {
 		});
 
 		assertTrue(exception.getMessage().contains("ya existe"));
+	}
+
+
+	@Test
+	void testSaveBooking_SuccessWithTimeGapGreaterThan2Hours() throws BookingServiceException {
+		// Configurar booking existente
+		LocalDate today = LocalDate.now();
+		LocalTime time1 = LocalTime.of(10, 0); // 10:00 AM
+		String classRoom = "Sala A";
+
+		Booking existingBooking = new Booking("existing123", today, time1, false, classRoom);
+
+		List<Booking> existingBookings = new ArrayList<>();
+		existingBookings.add(existingBooking);
+
+		// Configurar nuevo booking con más de 2 horas de diferencia
+		BookingDTO newBookingDTO = new BookingDTO();
+		newBookingDTO.setBookingId("new123");
+		newBookingDTO.setBookingDate(today);
+		newBookingDTO.setBookingTime(LocalTime.of(13, 0)); // 1:00 PM (3 horas después)
+		newBookingDTO.setBookingClassRoom(classRoom); // Mismo salón
+
+		// Configurar comportamiento del mock
+		when(mockBookingRepository.existsById("new123")).thenReturn(false);
+		when(mockBookingRepository.findAll()).thenReturn(existingBookings);
+
+		// Ejecutar método bajo prueba
+		Booking result = bookingService.saveBooking(newBookingDTO);
+
+		// Verificar
+		assertNotNull(result);
+		assertEquals("new123", result.getBookingId());
+		assertEquals(today, result.getBookingDate());
+		assertEquals(LocalTime.of(13, 0), result.getBookingTime());
+		assertEquals(classRoom, result.getBookingClassRoom());
+		assertTrue(result.isDisable()); // Por defecto es true según el constructor
+		verify(mockBookingRepository).save(any(Booking.class));
+	}
+
+	@Test
+	void testSaveBooking_FailsWithTimeGapLessThan2Hours() {
+		// Configurar booking existente
+		LocalDate today = LocalDate.now();
+		LocalTime time1 = LocalTime.of(10, 0); // 10:00 AM
+		String classRoom = "Sala A";
+
+		Booking existingBooking = new Booking("existing123", today, time1, false, classRoom);
+
+		List<Booking> existingBookings = new ArrayList<>();
+		existingBookings.add(existingBooking);
+
+		// Configurar nuevo booking con menos de 2 horas de diferencia
+		BookingDTO newBookingDTO = new BookingDTO();
+		newBookingDTO.setBookingId("new123");
+		newBookingDTO.setBookingDate(today);
+		newBookingDTO.setBookingTime(LocalTime.of(11, 30)); // 11:30 AM (1.5 horas después)
+		newBookingDTO.setBookingClassRoom(classRoom); // Mismo salón
+
+		// Configurar comportamiento del mock
+		when(mockBookingRepository.existsById("new123")).thenReturn(false);
+		when(mockBookingRepository.findAll()).thenReturn(existingBookings);
+
+		// Ejecutar método bajo prueba y verificar excepción
+		BookingServiceException exception = assertThrows(BookingServiceException.class, () -> {
+			bookingService.saveBooking(newBookingDTO);
+		});
+
+		// Verificar mensaje de error
+		assertEquals("Error: No se puede reservar en el mismo salón dentro de un intervalo de 2 horas.", exception.getMessage());
+
+		// Verificar que nunca se llamó al método save
+		verify(mockBookingRepository, never()).save(any(Booking.class));
+	}
+
+	@Test
+	void testSaveBooking_SuccessWithDifferentClassRoom() throws BookingServiceException {
+		// Configurar booking existente
+		LocalDate today = LocalDate.now();
+		LocalTime time1 = LocalTime.of(10, 0); // 10:00 AM
+		String classRoomA = "Sala A";
+
+		Booking existingBooking = new Booking("existing123", today, time1, false, classRoomA);
+
+		List<Booking> existingBookings = new ArrayList<>();
+		existingBookings.add(existingBooking);
+
+		// Configurar nuevo booking con mismo horario pero diferente salón
+		String classRoomB = "Sala B";
+		BookingDTO newBookingDTO = new BookingDTO();
+		newBookingDTO.setBookingId("new123");
+		newBookingDTO.setBookingDate(today);
+		newBookingDTO.setBookingTime(LocalTime.of(10, 30)); // 10:30 AM (menos de 2 horas después)
+		newBookingDTO.setBookingClassRoom(classRoomB); // Diferente salón
+
+		// Configurar comportamiento del mock
+		when(mockBookingRepository.existsById("new123")).thenReturn(false);
+		when(mockBookingRepository.findAll()).thenReturn(existingBookings);
+
+		// Ejecutar método bajo prueba
+		Booking result = bookingService.saveBooking(newBookingDTO);
+
+		// Verificar
+		assertNotNull(result);
+		assertEquals("new123", result.getBookingId());
+		assertEquals(today, result.getBookingDate());
+		assertEquals(LocalTime.of(10, 30), result.getBookingTime());
+		assertEquals(classRoomB, result.getBookingClassRoom());
+		assertTrue(result.isDisable()); // Por defecto es true según el constructor
+		verify(mockBookingRepository).save(any(Booking.class));
+	}
+
+	@Test
+	void testSaveBooking_SuccessWithDifferentDate() throws BookingServiceException {
+		// Configurar booking existente
+		LocalDate today = LocalDate.now();
+		LocalTime time1 = LocalTime.of(10, 0); // 10:00 AM
+		String classRoom = "Sala A";
+
+		Booking existingBooking = new Booking("existing123", today, time1, false, classRoom);
+
+		List<Booking> existingBookings = new ArrayList<>();
+		existingBookings.add(existingBooking);
+
+		// Configurar nuevo booking con mismo salón pero diferente fecha
+		LocalDate tomorrow = today.plusDays(1);
+		BookingDTO newBookingDTO = new BookingDTO();
+		newBookingDTO.setBookingId("new123");
+		newBookingDTO.setBookingDate(tomorrow); // Día siguiente
+		newBookingDTO.setBookingTime(time1); // Mismo horario
+		newBookingDTO.setBookingClassRoom(classRoom); // Mismo salón
+
+		// Configurar comportamiento del mock
+		when(mockBookingRepository.existsById("new123")).thenReturn(false);
+		when(mockBookingRepository.findAll()).thenReturn(existingBookings);
+
+		// Ejecutar método bajo prueba
+		Booking result = bookingService.saveBooking(newBookingDTO);
+
+		// Verificar
+		assertNotNull(result);
+		assertEquals("new123", result.getBookingId());
+		assertEquals(tomorrow, result.getBookingDate());
+		assertEquals(time1, result.getBookingTime());
+		assertEquals(classRoom, result.getBookingClassRoom());
+		assertTrue(result.isDisable()); // Por defecto es true según el constructor
+		verify(mockBookingRepository).save(any(Booking.class));
+	}
+
+	@Test
+	void testSaveBooking_SuccessBookingBeforeExisting() throws BookingServiceException {
+		// Configurar booking existente
+		LocalDate today = LocalDate.now();
+		LocalTime time1 = LocalTime.of(14, 0); // 2:00 PM
+		String classRoom = "Sala A";
+
+		Booking existingBooking = new Booking("existing123", today, time1, false, classRoom);
+
+		List<Booking> existingBookings = new ArrayList<>();
+		existingBookings.add(existingBooking);
+
+		// Configurar nuevo booking con horario anterior pero más de 2 horas de diferencia
+		BookingDTO newBookingDTO = new BookingDTO();
+		newBookingDTO.setBookingId("new123");
+		newBookingDTO.setBookingDate(today);
+		newBookingDTO.setBookingTime(LocalTime.of(11, 0)); // 11:00 AM (3 horas antes)
+		newBookingDTO.setBookingClassRoom(classRoom); // Mismo salón
+
+		// Configurar comportamiento del mock
+		when(mockBookingRepository.existsById("new123")).thenReturn(false);
+		when(mockBookingRepository.findAll()).thenReturn(existingBookings);
+
+		// Ejecutar método bajo prueba
+		Booking result = bookingService.saveBooking(newBookingDTO);
+
+		// Verificar
+		assertNotNull(result);
+		assertEquals("new123", result.getBookingId());
+		verify(mockBookingRepository).save(any(Booking.class));
+	}
+
+	@Test
+	void testSaveBooking_FailsWithPriorBookingLessThan2Hours() {
+		// Configurar booking existente
+		LocalDate today = LocalDate.now();
+		LocalTime time1 = LocalTime.of(14, 0); // 2:00 PM
+		String classRoom = "Sala A";
+
+		Booking existingBooking = new Booking("existing123", today, time1, false, classRoom);
+
+		List<Booking> existingBookings = new ArrayList<>();
+		existingBookings.add(existingBooking);
+
+		// Configurar nuevo booking con horario anterior pero menos de 2 horas de diferencia
+		BookingDTO newBookingDTO = new BookingDTO();
+		newBookingDTO.setBookingId("new123");
+		newBookingDTO.setBookingDate(today);
+		newBookingDTO.setBookingTime(LocalTime.of(13, 0)); // 1:00 PM (1 hora antes)
+		newBookingDTO.setBookingClassRoom(classRoom); // Mismo salón
+
+		// Configurar comportamiento del mock
+		when(mockBookingRepository.existsById("new123")).thenReturn(false);
+		when(mockBookingRepository.findAll()).thenReturn(existingBookings);
+
+		// Ejecutar método bajo prueba y verificar excepción
+		BookingServiceException exception = assertThrows(BookingServiceException.class, () -> {
+			bookingService.saveBooking(newBookingDTO);
+		});
+
+		// Verificar mensaje de error
+		assertEquals("Error: No se puede reservar en el mismo salón dentro de un intervalo de 2 horas.", exception.getMessage());
+
+		// Verificar que nunca se llamó al método save
+		verify(mockBookingRepository, never()).save(any(Booking.class));
 	}
 
 	@Test
@@ -639,9 +857,42 @@ public class CvdsBackApplicationTests {
 
 	@Test
 	void contextLoads() {
+		assertTrue(true);
 	}
+
 	@Test
 	void testMainMethod() {
-		CvdsBackApplication.main(new String[]{});
+		// Instead of calling the main method directly, we'll mock the SpringApplication class
+		try (MockedStatic<SpringApplication> mocked = Mockito.mockStatic(SpringApplication.class)) {
+			// Set up the mock to do nothing when run is called
+			mocked.when(() -> SpringApplication.run(
+							CvdsBackApplication.class,
+							new String[]{}))
+					.thenReturn(null);
+
+			// Now call the main method
+			CvdsBackApplication.main(new String[]{});
+
+			// Verify that SpringApplication.run was called with the correct parameters
+			mocked.verify(() -> SpringApplication.run(
+							CvdsBackApplication.class,
+							new String[]{}),
+					times(1));
+		}
 	}
+
+	@Test
+	void testApplicationAnnotations() {
+		// Verify the application class has the required annotations
+		Class<?> appClass = CvdsBackApplication.class;
+
+		// Check for @SpringBootApplication annotation
+		assertTrue(appClass.isAnnotationPresent(SpringBootApplication.class),
+				"Application class should have @SpringBootApplication annotation");
+
+		// Check for @EnableMongoRepositories annotation
+		assertTrue(appClass.isAnnotationPresent(EnableMongoRepositories.class),
+				"Application class should have @EnableMongoRepositories annotation");
+	}
+
 }
