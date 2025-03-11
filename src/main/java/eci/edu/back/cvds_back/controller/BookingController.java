@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/booking-service")
+@CrossOrigin(origins = "*") // Permite acceso desde cualquier lado
 
 public class BookingController {
     @Autowired

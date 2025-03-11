@@ -8,6 +8,8 @@ import eci.edu.back.cvds_back.service.interfaces.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -24,10 +26,30 @@ public class BookingServiceImpl implements BookingService {
         if (bookingRepository.existsById(bookingDTO.getBookingId())) {
             throw new BookingServiceException("Error: El bookingId '" + bookingDTO.getBookingId() + "' ya existe.");
         }
+
+        List<Booking> existingBookings = bookingRepository.findAll();
+        LocalDate newDate = bookingDTO.getBookingDate();
+        LocalTime newTime = bookingDTO.getBookingTime();
+        String newClassRoom = bookingDTO.getBookingClassRoom();
+
+        for (Booking existingBooking : existingBookings) {
+            if (existingBooking.getBookingDate().equals(newDate) &&
+                    existingBooking.getBookingClassRoom().equals(newClassRoom)) {
+
+                // Calcular la diferencia en horas entre las reservas
+                long difference = Math.abs(existingBooking.getBookingTime().until(newTime, java.time.temporal.ChronoUnit.HOURS));
+
+                if (difference < 2) {
+                    throw new BookingServiceException("Error: No se puede reservar en el mismo salón dentro de un intervalo de 2 horas.");
+                }
+            }
+        }
+
         Booking booking = new Booking(bookingDTO);
         bookingRepository.save(booking);
         return booking;
     }
+
 
 
     @Override
